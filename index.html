@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAX Institutional ORB/VWAP Strategy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #fff;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00c9ff, #92fe9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(30, 40, 80, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            background: rgba(40, 50, 100, 0.8);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .time-icon { background: linear-gradient(45deg, #ff6b6b, #ffa502); }
+        .logic-icon { background: linear-gradient(45deg, #4ecdc4, #44a08d); }
+        .entry-icon { background: linear-gradient(45deg, #667eea, #764ba2); }
+        .risk-icon { background: linear-gradient(45deg, #f093fb, #f5576c); }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .steps {
+            list-style-type: none;
+        }
+        
+        .steps li {
+            margin-bottom: 15px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .steps li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #00c9ff;
+            font-weight: bold;
+        }
+        
+        .highlight {
+            background: linear-gradient(45deg, #ffd89b, #19547b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+        
+        .parameters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .param-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #00c9ff;
+        }
+        
+        .param-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #00c9ff;
+        }
+        
+        .example {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #92fe9d;
+        }
+        
+        .example-title {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #92fe9d;
+        }
+        
+        .quick-reference {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .quick-reference h2 {
+            margin-bottom: 20px;
+            color: #ffd89b;
+        }
+        
+        .reference-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .reference-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .reference-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #00c9ff;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DAX Institutional ORB/VWAP Strategy</h1>
+            <p class="subtitle">A systematic approach to trading the German DAX index using Opening Range Breakout combined with VWAP/EMA confluence</p>
+        </header>
+        
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon time-icon">⏱️</div>
+                    <h2 class="card-title">Market Timing Setup</h2>
+                </div>
+                <ul class="steps">
+                    <li>Set chart timezone to <span class="highlight">Europe/Berlin</span></li>
+                    <li>ORB Period: <span class="highlight">08:30 - 09:00 CET</span></li>
+                    <li>Retention Check: <span class="highlight">08:55 CET</span></li>
+                    <li>Trading Window: <span class="highlight">09:00+ CET</span></li>
+                    <li>Avoid trading last 30 minutes of session</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon logic-icon">📊</div>
+                    <h2 class="card-title">Strategy Logic</h2>
+                </div>
+                <ul class="steps">
+                    <li><span class="highlight">ORB Formation</span>: Capture 08:30-09:00 range</li>
+                    <li><span class="highlight">VWAP/EMA Confluence</span>: Within 0.3% of each other</li>
+                    <li><span class="highlight">Trend Confirmation</span>: EMA(20) > EMA(50) for longs</li>
+                    <li><span class="highlight">80% Retention Rule</span>: Price holds key level at 08:55</li>
+                    <li><span class="highlight">Volume Confirmation</span>: 20% above average (optional)</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon entry-icon">🎯</div>
+                    <h2 class="card-title">Entry Signals</h2>
+                </div>
+                <ul class="steps">
+                    <li><span class="highlight">Bullish Setup</span>: Green background + price above 80% level</li>
+                    <li><span class="highlight">Bearish Setup</span>: Red background + price below 80% level</li>
+                    <li>Entry: Break above/below ORB high/low after 09:00 CET</li>
+                    <li>Stop Loss: Opposite side of ORB</li>
+                    <li>Targets: 1x ORB range, then VWAP/confluence levels</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon risk-icon">⚠️</div>
+                    <h2 class="card-title">Risk Management</h2>
+                </div>
+                <ul class="steps">
+                    <li>Risk <span class="highlight">1% of capital</span> per trade</li>
+                    <li>Maximum <span class="highlight">1 setup per day</span></li>
+                    <li>Avoid major EU news releases (09:00/10:00 CET)</li>
+                    <li>Use <span class="highlight">position sizing</span> based on stop distance</li>
+                    <li>Maintain <span class="highlight">2:1 reward:risk ratio</span> minimum</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <div class="icon" style="background: linear-gradient(45deg, #ffa751, #ffe259);">⚙️</div>
+                <h2 class="card-title">Input Parameters</h2>
+            </div>
+            <div class="parameters">
+                <div class="param-item">
+                    <div class="param-name">Max % Diff for Confluence</div>
+                    <div>0.3% - Tightness of VWAP/EMA alignment</div>
+                </div>
+                <div class="param-item">
+                    <div class="param-name">ORB Start Time</div>
+                    <div>08:30 CET - Opening range start</div>
+                </div>
+                <div class="param-item">
+                    <div class="param-name">ORB End Time</div>
+                    <div>09:00 CET - Opening range end</div>
+                </div>
+                <div class="param-item">
+                    <div class="param-name">Retention Check</div>
+                    <div>08:55 CET - Validation time</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="example">
+            <h3 class="example-title">📊 Example Trade Scenario</h3>
+            <p><span class="highlight">ORB High:</span> 15,850 | <span class="highlight">ORB Low:</span> 15,800</p>
+            <p><span class="highlight">At 08:55:</span> Price = 15,845 (above 80% level: 15,810)</p>
+            <p><span class="highlight">VWAP:</span> 15,830 | <span class="highlight">EMA(20):</span> 15,832 | <span class="highlight">EMA(50):</span> 15,800</p>
+            <p><span class="highlight">Action:</span> Green "LONG" label appears → Buy at 15,850 with stop at 15,800</p>
+        </div>
+        
+        <div class="quick-reference">
+            <h2>⚡ Quick Reference Card</h2>
+            <div class="reference-grid">
+                <div class="reference-item">
+                    <div class="reference-label">ORB TIME</div>
+                    <div>08:30-09:00 CET</div>
+                </div>
+                <div class="reference-item">
+                    <div class="reference-label">ENTRY TIME</div>
+                    <div>09:00+ CET</div>
+                </div>
+                <div class="reference-item">
+                    <div class="reference-label">CONFIRMATION</div>
+                    <div>VWAP/EMA within 0.3%</div>
+                </div>
+                <div class="reference-item">
+                    <div class="reference-label">LONG SIGNAL</div>
+                    <div>Green label + price above 80%</div>
+                </div>
+                <div class="reference-item">
+                    <div class="reference-label">SHORT SIGNAL</div>
+                    <div>Red label + price below 80%</div>
+                </div>
+                <div class="reference-item">
+                    <div class="reference-label">STOP LOSS</div>
+                    <div>Opposite side of ORB</div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>DAX Institutional ORB/VWAP Strategy | Designed for German Market Hours | Risk Management Essential</p>
+            <p>Always test strategies with paper trading before risking real capital</p>
+        </footer>
+    </div>
+</body>
+</html>
